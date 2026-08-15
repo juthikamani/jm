@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juthikamani Foundation | A Story of Hope</title>
+    <meta name="description" content="Juthikamani Foundation is dedicated to expanding educational access and holistic development for underprivileged children and women.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-dark: #1a1a2e;
+            --color-light: #fcfbf9;
+            --color-earthy: #d4a373;
+            --color-green: #2c4c3b;
+            --font-sans: 'Inter', sans-serif;
+            --font-serif: 'Playfair Display', serif;
+            --book-width: 900px;
+            --book-height: 600px;
+            --book-scale: 1;
+        }
+
+        @media (max-width: 1024px) {
+            :root { --book-scale: 0.8; }
+        }
+        @media (max-width: 800px) {
+            :root { --book-scale: 0.65; }
+        }
+        @media (max-width: 600px) {
+            :root { --book-scale: 0.5; }
+        }
+        @media (max-width: 450px) {
+            :root { --book-scale: 0.38; }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            background: linear-gradient(135deg, #e3e0db 0%, #c8c2b7 100%);
+            color: var(--color-dark);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-serif);
+            font-weight: 400;
+            margin-top: 0;
+        }
+
+        /* Persistent Donate Button */
+        .top-donate-btn {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--color-dark);
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .top-donate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #fff;
+        }
+        .heart {
+            animation: heartbeat 1.5s infinite;
+            display: inline-block;
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            15% { transform: scale(1.3); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.3); }
+            60% { transform: scale(1); }
+        }
+
+        .instruction {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-serif);
+            font-style: italic;
+            font-size: 1.2rem;
+            color: rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 0;
+            animation: pulseText 2s infinite;
+        }
+        @keyframes pulseText {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* 3D Book Layout */
+        .book-container {
+            perspective: 2000px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .book {
+            width: var(--book-width);
+            height: var(--book-height);
+            position: relative;
+            transform-style: preserve-3d;
+            /* Global tilt applied via JS */
+            transform: scale(var(--book-scale)) rotateX(10deg) rotateY(0deg) translateX(25%);
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+        }
+
+        /* Shift the book to the center when open */
+        .book.open {
+            transform: scale(var(--book-scale)) rotateX(5deg) rotateY(0deg) translateX(0%);
+        }
+
+        /* Book Shadow */
+        .book::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            width: 90%;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            transform: translateX(-50%) rotateX(90deg);
+            filter: blur(20px);
+            z-index: -1;
+        }
+
+        .page {
+            width: 50%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform-origin: left center;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+            cursor: grab;
+        }
+        .page:active {
+            cursor: grabbing;
+        }
+
+        .page.flipped {
+            transform: rotateY(-180deg);
+        }
+
+        .front, .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 3rem;
+            box-sizing: border-box;
+            background-color: var(--color-light);
+            /* Soft paper vignette */
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.05), inset -2px 0 10px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 2px 8px 8px 2px;
+        }
+        
+        .front {
+            transform: rotateY(0deg);
+            border-left: 2px solid rgba(0,0,0,0.1); /* Spine fold */
+        }
+        
+        .back {
+            transform: rotateY(180deg);
+            border-right: 2px solid rgba(0,0,0,0.1); /* Spine fold */
+            border-radius: 8px 2px 2px 8px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.05), inset 2px 0 10px rgba(0,0,0,0.02);
+        }
+
+        /* Page Shadows for 3D realism */
+        .front::after, .back::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            pointer-events: none;
+            background: linear-gradient(to right, rgba(0,0,0,0.1) 0%, transparent 100%);
+        }
+        .front::after { left: 0; }
+        .back::after { 
+            right: 0; 
+            background: linear-gradient(to left, rgba(0,0,0,0.1) 0%, transparent 100%);
+        }
+
+        /* Page Background Variants */
+        .page-dark { background-color: var(--color-dark); color: var(--color-light); }
+        .page-earthy { background-color: var(--color-earthy); color: var(--color-light); }
+        .page-green { background-color: var(--color-green); color: var(--color-light); }
+        .cover-front { 
+            background: var(--color-dark); 
+            color: var(--color-light); 
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 4px 12px 12px 4px;
+            box-shadow: inset 5px 0 20px rgba(255,255,255,0.05), -5px 5px 20px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .cover-back { background: var(--color-dark); }
+
+        /* Typography & Layout inside pages */
+        .chapter-label {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 10px;
+            margin-bottom: 1.5rem;
+            opacity: 0.6;
+            font-weight: 500;
+        }
+
+        .page h2 {
+            font-size: 2.2rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .page p {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+
+        .logo-img {
+            width: 120px;
+            margin-bottom: 2rem;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .directors-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .director {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .director-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #eaeaea;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .director-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .director-info h3 {
+            font-size: 0.95rem;
+            margin: 0 0 0.1rem 0;
+        }
+        .director-info p {
+            font-size: 0.65rem;
+            margin: 0;
+            line-height: 1.1;
+            opacity: 0.7;
+        }
+
+        .impact-quote {
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            line-height: 1.4;
+            font-style: italic;
+            margin: auto 0;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background-color: var(--color-earthy);
+            color: var(--color-light);
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-family: var(--font-sans);
+            cursor: pointer;
+            border-radius: 4px;
+            text-align: center;
+            margin-top: 2rem;
+            text-decoration: none;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 2rem;
+            font-size: 0.8rem;
+            opacity: 0.5;
+            font-family: var(--font-serif);
+        }
+        .front .page-number { right: 3rem; }
+        .back .page-number { left: 3rem; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(26, 26, 46, 0.9);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background-color: var(--color-light);
+            color: var(--color-dark);
+            padding: 3rem;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            right: 1.5rem;
+            top: 1.5rem;
+            font-size: 2rem;
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        .qr-section img {
+            width: 180px;
+            height: 180px;
+            margin-bottom: 1rem;
+            border: 1px solid #eaeaea;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .btn-upi {
+            display: inline-block;
+            background-color: #2d6a4f;
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 2rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        /* Infinite Marquee */
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            white-space: nowrap;
+            position: relative;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-track {
+            display: inline-flex;
+            animation: scrollMarquee 45s linear infinite;
+            gap: 1rem;
+        }
+        .marquee-track img {
+            width: 160px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        @keyframes scrollMarquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-50% - 0.5rem)); }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="top-donate-btn" id="topDonateBtn">
+        <span class="heart">❤️</span> Donate Now
+    </button>
+
+    <div class="instruction">Click the right page to turn</div>
+
+    <div class="book-container" id="bookContainer">
+        <div class="book" id="book">
+            
+            <!-- Page 1: Cover -->
+            <div class="page" id="page1">
+                <!-- Cover Front -->
+                <div class="front cover-front">
+                    <img src="images/logo.png" alt="JF Logo" class="logo-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzFhMWEyZSIvPjx0ZXh0IHg9IjUwIiB5PSI2NCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjQwIiBmaWxsPSIjZmNmYmY5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5KRjwvdGV4dD48L3N2Zz+'">
+                    <h1 class="hero-title">A Story of Hope</h1>
+                    <p style="font-family: var(--font-serif); font-style: italic;">Ekam Sat Vipra Bahudha Vadanti</p>
+                </div>
+                <!-- Inside Cover -->
+                <div class="back cover-back"></div>
+            </div>
+
+            <!-- Page 2: Ch 2 & 3 -->
+            <div class="page" id="page2">
+                <div class="front">
+                    <div class="chapter-label">Chapter 02 — The Beginning</div>
+                    <h2>October 28, 2020</h2>
+                    <p>In Ghaziabad, Uttar Pradesh, a seed was planted. The Juthikamani Foundation was incorporated with a singular, powerful vision: <em>Cultivating Unity in Diversity.</em></p>
+                    <p>From the very beginning, our core focus emerged clearly: social development, cultural preservation, and conflict resolution. We set out not just to build an organization, but to foster a movement of oneness.</p>
+                    <div class="page-number">1</div>
+                </div>
+                <div class="back page-earthy">
+                    <div class="chapter-label">Chapter 03 — The Belief</div>
+                    <h2>Diversity does not divide us.</h2>
+                    <p>We work to transcend physical, economic, and social barriers. We believe that true empowerment happens when communities are given the tools to understand each other and grow together.</p>
+                    <p>From launching initiatives like "Beyond Disputes: A Guide to Conflict Resolution" to empowering marginalized communities through education and digital literacy, every step we take is rooted in collective upliftment.</p>
+                    <div class="page-number">2</div>
+                </div>
+            </div>
+
+            <!-- Page 3: Ch 4 & 5 -->
+            <div class="page" id="page3">
+                <div class="front">
+                    <div class="chapter-label">Chapter 04 — The People</div>
+                    <h2>The minds behind the mission.</h2>
+                    <div class="directors-grid">
+                        <div class="director">
+                            <div class="director-img"><img src="images/medhavi-singh.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Medhavi Singh</h3>
+                                <p>Treasurer & Director</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/dr-meena-singh.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Dr. Meena Singh</h3>
+                                <p>Board Member</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/veena-singh.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Veena Singh</h3>
+                                <p>Board Member</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/shreya-singh.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Shreya Singh</h3>
+                                <p>Manager and Creative Head</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/aakash-singh.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Aakash Singh</h3>
+                                <p>Tech Lead</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/abhishek-shekhar-raj.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Abhishek Shekhar Raj</h3>
+                                <p>Technology Innovation Consultant</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/gopika-krishnan.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Gopika Krishnan</h3>
+                                <p>Research and Fund Raising Head</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/shivangi-rai.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Shivangi Rai</h3>
+                                <p>HR Coordinator</p>
+                            </div>
+                        </div>
+                        <div class="director">
+                            <div class="director-img"><img src="images/nisha-kumari.jpg" onerror="this.style.display='none'"></div>
+                            <div class="director-info">
+                                <h3>Nisha Kumari</h3>
+                                <p>Cultural Head</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page-number">3</div>
+                </div>
+                <div class="back page-green">
+                    <div class="chapter-label">Chapter 05 — The Challenge</div>
+                    <h2>Talent is everywhere. Opportunity isn't.</h2>
+                    <p>Across rural India, bright minds remain constrained by their circumstances. Women lack digital literacy, and children face insurmountable barriers to quality education.</p>
+                    <p>We saw this gap, and we decided to build a bridge. We realized that solving this required more than just resources—it required continuous mentorship.</p>
+                    <div class="page-number">4</div>
+                </div>
+            </div>
+
+            <!-- Page 4: Ch 6 & 7 -->
+            <div class="page" id="page4">
+                <div class="front">
+                    <div class="chapter-label">Chapter 06 — The Wings</div>
+                    <h2>Project Pankh</h2>
+                    <p>An initiative dedicated to expanding educational access for underprivileged children and women.</p>
+                    <p>Through a <strong>hybrid learning model</strong>, educators from across India deliver online instruction, while dedicated on-ground volunteers provide continuous academic support in Village Dumra, Bihar.</p>
+                    <p>Beyond academics, we emphasize holistic development through cultural and skill-based workshops.</p>
+                    <div class="page-number">5</div>
+                </div>
+                <div class="back">
+                    <div class="chapter-label">Chapter 07 — The Impact</div>
+                    <div class="impact-quote">
+                        "Rani Kumari, a student of Project Pankh, successfully cleared the B.Ed. entrance examination and secured admission to a teacher training college."
+                    </div>
+                    <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Her achievement reflects the collective efforts of educators and volunteers.
+                    </p>
+                    <div class="page-number">6</div>
+                </div>
+            </div>
+
+
+            <!-- Page 5: Ch 8 & 9 -->
+            <div class="page" id="page5">
+                <div class="front page-earthy">
+                    <div class="chapter-label">Chapter 08 — The Culture</div>
+                    <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Sanskriti Cultural Society</h2>
+                    <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">A cultural initiative committed to celebrating India’s diverse heritage while nurturing creativity, confidence, and cultural awareness among our communities.</p>
+                    <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">Through dance, music, art, and traditional celebrations, Sanskriti creates a space where young minds can discover their talents and connect with the traditions that shape our identity.</p>
+                    <p style="font-size: 0.9rem; margin-bottom: 1rem;">We believe culture is a living legacy. Sanskriti strives to preserve this legacy, ensuring it grows as it is shared and passed on to future generations.</p>
+                    <p style="font-size: 0.95rem; font-style: italic; text-align: center;">Sanskriti — celebrating our roots and carrying our heritage forward.</p>
+                    <div class="page-number">7</div>
+                </div>
+                <div class="back page-light">
+                    <div class="chapter-label">Chapter 09 — The Memories</div>
+                    <h2 style="font-size: 2rem;">Footprints of Hope</h2>
+                    
+                    <div class="marquee-container">
+                        <div class="marquee-track">
+                            <!-- Original Set (1-9) -->
+                            <img src="images/photo-1.jpg" onerror="this.style.backgroundColor='#eaeaea'">
+                            <img src="images/photo-2.jpg" onerror="this.style.backgroundColor='#dcdcdc'">
+                            <img src="images/photo-3.jpg" onerror="this.style.backgroundColor='#cccccc'">
+                            <img src="images/photo-4.jpg" onerror="this.style.backgroundColor='#eaeaea'">
+                            <img src="images/photo-5.jpg" onerror="this.style.backgroundColor='#dcdcdc'">
+                            <img src="images/photo-6.jpg" onerror="this.style.backgroundColor='#cccccc'">
+                            <img src="images/photo-7.jpg" onerror="this.style.backgroundColor='#eaeaea'">
+                            <img src="images/photo-8.jpg" onerror="this.style.backgroundColor='#dcdcdc'">
+                            <img src="images/photo-9.jpg" onerror="this.style.backgroundColor='#cccccc'">
+                            <!-- Duplicate Set for Seamless Infinite Loop -->
+                            <img src="images/photo-1.jpg" onerror="this.style.backgroundColor='#eaeaea'">
+                            <img src="images/photo-2.jpg" onerror="this.style.backgroundColor='#dcdcdc'">
+                            <img src="images/photo-3.jpg" onerror="this.style.backgroundColor='#cccccc'">
+                            <img src="images/photo-4.jpg" onerror="this.style.backgroundColor='#eaeaea'">
+                            <img src="images/photo-5.jpg" onerror="this.style.backgroundColor='#dcdcdc'">
+                            <img src="images/photo-6.jpg" onerror="this.style.backgroundColor='#cccccc'">
+                            <img src="images/photo-7.jpg" onerror="this.style.backgroundColor='#eaeaea'">
+                            <img src="images/photo-8.jpg" onerror="this.style.backgroundColor='#dcdcdc'">
+                            <img src="images/photo-9.jpg" onerror="this.style.backgroundColor='#cccccc'">
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: 0.9rem; font-style: italic; opacity: 0.8; margin-top: 1rem;">
+                        These fleeting moments—a burst of laughter, the quiet focus in a classroom, the sheer joy of discovery—are the true measure of our journey. They remind us why we started, and why we must keep going. Every memory captured here is a promise of a brighter tomorrow.
+                    </p>
+                    <div class="page-number">8</div>
+                </div>
+            </div>
+
+            <!-- Page 6: Ch 10 & Back Cover -->
+            <div class="page" id="page6">
+                <div class="front">
+                    <div class="chapter-label">Chapter 10 — Join the Story</div>
+                    <h2>The story continues with the next child.</h2>
+                    <p>Your contribution helps fund learning materials, maintain tech setups in Dumra, and sponsor students like Rani to achieve their dreams.</p>
+                    <p style="margin-top: 2rem;">Contact: juthikamanifoundation@gmail.com</p>
+                    <p>CIN: U85300UP2020NPL137057 | ROC: Kanpur</p>
+                    <div class="page-number">9</div>
+                </div>
+                <div class="back cover-back">
+                    <img src="images/logo.png" alt="JF Logo" style="width: 80px; position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%); opacity: 0.5;" onerror="this.style.display='none'">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Donate Modal -->
+    <div id="donateModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModalBtn">&times;</span>
+            <h2 style="font-family: var(--font-serif); margin-bottom: 0.5rem;">Support Our Mission</h2>
+            <p style="margin-bottom: 2rem; opacity: 0.8;">Every rupee takes someone closer to their wings.</p>
+            
+            <div class="qr-section">
+                <img src="images/qr-code.png" alt="Donate QR Code" onerror="this.style.display='none'">
+                <p style="font-size: 0.9rem; color: #666;">Scan to Pay</p>
+            </div>
+            
+            <div style="margin: 1.5rem 0; color: #888; font-size: 0.9rem;">OR</div>
+            
+            <a href="upi://pay?pa=8826853228@ptaxis" class="btn-upi">Pay using UPI</a>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.7;">8826853228@ptaxis</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 3D BOOK FLIPPING LOGIC ---
+            const pages = document.querySelectorAll('.page');
+            const book = document.getElementById('book');
+            let currentPage = 0;
+
+            // Initialize Z-Indexes
+            // The highest z-index must be the first page (cover) so it sits on top.
+            pages.forEach((page, index) => {
+                page.style.zIndex = pages.length - index;
+                
+                // Add click events to front and back faces
+                const front = page.querySelector('.front');
+                const back = page.querySelector('.back');
+
+                // Click right side to turn page left
+                front.addEventListener('click', () => {
+                    if (index === currentPage) {
+                        page.classList.add('flipped');
+                        // Center the book if opening the cover
+                        if (index === 0) {
+                            book.classList.add('open');
+                        }
+                        
+                        // Shift z-index midway through flip so it stacks correctly on the left side
+                        setTimeout(() => {
+                            page.style.zIndex = index + 1;
+                        }, 500); 
+                        
+                        currentPage++;
+                    }
+                });
+
+                // Click left side to turn page right
+                back.addEventListener('click', () => {
+                    if (index === currentPage - 1) {
+                        // Immediately restore z-index to bring it above the left stack
+                        page.style.zIndex = pages.length - index;
+                        page.classList.remove('flipped');
+                        
+                        // Shift book back if closing cover
+                        if (index === 0) {
+                            book.classList.remove('open');
+                        }
+                        
+                        currentPage--;
+                    }
+                });
+            });
+
+
+            // --- GLOBAL 3D TILT MOUSE TRACKING ---
+            const bookContainer = document.getElementById('bookContainer');
+            
+            bookContainer.addEventListener('mousemove', (e) => {
+                // Get mouse position relative to center of screen
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 25; // Adjust sensitivity
+                const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+                
+                // If book is open, it sits at translateX(0%), if closed translateX(25%)
+                const translateX = book.classList.contains('open') ? '0%' : '25%';
+                const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                
+                // Apply rotation
+                book.style.transform = `scale(${scale}) rotateY(${xAxis}deg) rotateX(${yAxis + 5}deg) translateX(${translateX})`;
+            });
+
+            bookContainer.addEventListener('mouseleave', () => {
+                // Snap back to default
+                const translateX = book.classList.contains('open') ? '0%' : '25%';
+                const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                // Default slight tilt for 3D look
+                book.style.transform = `scale(${scale}) rotateX(5deg) rotateY(0deg) translateX(${translateX})`; 
+            });
+
+
+            // --- MODAL LOGIC ---
+            const modal = document.getElementById('donateModal');
+            document.getElementById('topDonateBtn').addEventListener('click', () => {
+                modal.classList.add('active');
+            });
+            document.getElementById('closeModalBtn').addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>
