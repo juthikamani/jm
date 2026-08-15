@@ -28,13 +28,27 @@
             :root { --book-scale: 0.8; }
         }
         @media (max-width: 800px) {
-            :root { --book-scale: 0.65; }
+            :root { 
+                /* Scale the 900px book so half of it (450px) perfectly fills 100vw */
+                --book-scale: calc(100vw / 450); 
+            }
         }
-        @media (max-width: 600px) {
-            :root { --book-scale: 0.5; }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 50vw;
+            z-index: 500;
         }
-        @media (max-width: 450px) {
-            :root { --book-scale: 0.38; }
+        .nav-left { left: 0; }
+        .nav-right { right: 0; }
+        
+        @media (max-width: 800px) {
+            .mobile-nav { display: block; }
+            .book-container { overflow-x: hidden; }
+            body { overflow-x: hidden; }
         }
 
         body {
@@ -131,6 +145,7 @@
             height: var(--book-height);
             position: relative;
             transform-style: preserve-3d;
+            flex-shrink: 0;
             /* Global tilt applied via JS */
             transform: scale(var(--book-scale)) rotateX(10deg) rotateY(0deg) translateX(25%);
             transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -647,83 +662,125 @@
         </div>
     </div>
 
+    <div class="mobile-nav nav-left" id="navLeft"></div>
+    <div class="mobile-nav nav-right" id="navRight"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- 3D BOOK FLIPPING LOGIC ---
             const pages = document.querySelectorAll('.page');
             const book = document.getElementById('book');
-            let currentPage = 0;
+            const bookContainer = document.getElementById('bookContainer');
+            
+            let currentPage = 0; // For Desktop
+            let currentView = 0; // For Mobile (0, 1, 2, ...)
+            const maxViews = pages.length * 2 - 1;
 
             // Initialize Z-Indexes
-            // The highest z-index must be the first page (cover) so it sits on top.
             pages.forEach((page, index) => {
                 page.style.zIndex = pages.length - index;
                 
-                // Add click events to front and back faces
                 const front = page.querySelector('.front');
                 const back = page.querySelector('.back');
 
-                // Click right side to turn page left
+                // DESKTOP: Click right side to turn page left
                 front.addEventListener('click', () => {
-                    if (index === currentPage) {
+                    if (window.innerWidth > 800 && index === currentPage) {
                         page.classList.add('flipped');
-                        // Center the book if opening the cover
-                        if (index === 0) {
-                            book.classList.add('open');
-                        }
+                        if (index === 0) book.classList.add('open');
                         
-                        // Shift z-index midway through flip so it stacks correctly on the left side
-                        setTimeout(() => {
-                            page.style.zIndex = index + 1;
-                        }, 500); 
-                        
+                        setTimeout(() => { page.style.zIndex = index + 1; }, 500); 
                         currentPage++;
+                        
+                        // Sync mobile state just in case of resize
+                        currentView = currentPage * 2 - 1;
                     }
                 });
 
-                // Click left side to turn page right
+                // DESKTOP: Click left side to turn page right
                 back.addEventListener('click', () => {
-                    if (index === currentPage - 1) {
-                        // Immediately restore z-index to bring it above the left stack
+                    if (window.innerWidth > 800 && index === currentPage - 1) {
                         page.style.zIndex = pages.length - index;
                         page.classList.remove('flipped');
-                        
-                        // Shift book back if closing cover
-                        if (index === 0) {
-                            book.classList.remove('open');
-                        }
+                        if (index === 0) book.classList.remove('open');
                         
                         currentPage--;
+                        currentView = currentPage === 0 ? 0 : currentPage * 2 - 1;
                     }
                 });
             });
 
+            // --- MOBILE STATE MACHINE ---
+            function updateMobileState() {
+                const targetFlippedPages = Math.floor((currentView + 1) / 2);
+                const cameraSide = (currentView % 2 === 0) ? 'right' : 'left';
+                
+                // Manage page flips
+                pages.forEach((page, index) => {
+                    if (index < targetFlippedPages) {
+                        page.classList.add('flipped');
+                        // Immediately set z-index for instant rendering on mobile
+                        page.style.zIndex = index + 1;
+                    } else {
+                        page.classList.remove('flipped');
+                        page.style.zIndex = pages.length - index;
+                    }
+                });
+                
+                // Manage camera pan
+                const tX = (cameraSide === 'right') ? '-25%' : '25%';
+                const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                book.style.transform = `scale(${scale}) rotateX(0deg) rotateY(0deg) translateX(${tX})`;
+                
+                // Sync desktop state
+                currentPage = targetFlippedPages;
+            }
 
-            // --- GLOBAL 3D TILT MOUSE TRACKING ---
-            const bookContainer = document.getElementById('bookContainer');
-            
+            document.getElementById('navRight').addEventListener('click', () => {
+                if (window.innerWidth <= 800 && currentView < maxViews) {
+                    currentView++;
+                    updateMobileState();
+                }
+            });
+
+            document.getElementById('navLeft').addEventListener('click', () => {
+                if (window.innerWidth <= 800 && currentView > 0) {
+                    currentView--;
+                    updateMobileState();
+                }
+            });
+
+            // --- GLOBAL 3D TILT MOUSE TRACKING (DESKTOP ONLY) ---
             bookContainer.addEventListener('mousemove', (e) => {
-                // Get mouse position relative to center of screen
-                const xAxis = (window.innerWidth / 2 - e.pageX) / 25; // Adjust sensitivity
+                if (window.innerWidth <= 800) return; // Disable on mobile
+                
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
                 const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
                 
-                // If book is open, it sits at translateX(0%), if closed translateX(25%)
                 const translateX = book.classList.contains('open') ? '0%' : '25%';
                 const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
                 
-                // Apply rotation
                 book.style.transform = `scale(${scale}) rotateY(${xAxis}deg) rotateX(${yAxis + 5}deg) translateX(${translateX})`;
             });
 
             bookContainer.addEventListener('mouseleave', () => {
-                // Snap back to default
+                if (window.innerWidth <= 800) return;
+                
                 const translateX = book.classList.contains('open') ? '0%' : '25%';
                 const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
-                // Default slight tilt for 3D look
                 book.style.transform = `scale(${scale}) rotateX(5deg) rotateY(0deg) translateX(${translateX})`; 
             });
 
+            // --- INITIALIZATION ON RESIZE ---
+            window.addEventListener('resize', () => {
+                if (window.innerWidth <= 800) {
+                    updateMobileState();
+                } else {
+                    // Reset to desktop default
+                    const translateX = book.classList.contains('open') ? '0%' : '25%';
+                    const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                    book.style.transform = `scale(${scale}) rotateX(5deg) rotateY(0deg) translateX(${translateX})`;
+                }
+            });
 
             // --- MODAL LOGIC ---
             const modal = document.getElementById('donateModal');
@@ -736,6 +793,11 @@
             window.addEventListener('click', (e) => {
                 if (e.target === modal) modal.classList.remove('active');
             });
+            
+            // Initial call to set correct state
+            if (window.innerWidth <= 800) {
+                updateMobileState();
+            }
         });
     </script>
 </body>
