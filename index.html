@@ -21,17 +21,6 @@
             --font-serif: 'Playfair Display', serif;
             --book-width: 900px;
             --book-height: 600px;
-            --book-scale: 1;
-        }
-
-        @media (max-width: 1024px) {
-            :root { --book-scale: 0.8; }
-        }
-        @media (max-width: 800px) {
-            :root { 
-                /* Scale the 900px book so half of it (450px) perfectly fills 100vw */
-                --book-scale: calc(100vw / 450); 
-            }
         }
 
         .mobile-nav {
@@ -146,15 +135,15 @@
             position: relative;
             transform-style: preserve-3d;
             flex-shrink: 0;
-            /* Global tilt applied via JS */
-            transform: scale(var(--book-scale)) rotateX(10deg) rotateY(0deg) translateX(25%);
+            /* Default transform */
+            transform: scale(1) rotateX(10deg) rotateY(0deg) translateX(25%);
             transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             will-change: transform;
         }
 
         /* Shift the book to the center when open */
         .book.open {
-            transform: scale(var(--book-scale)) rotateX(5deg) rotateY(0deg) translateX(0%);
+            transform: scale(1) rotateX(5deg) rotateY(0deg) translateX(0%);
         }
 
         /* Book Shadow */
@@ -709,6 +698,16 @@
                 });
             });
 
+            // --- DYNAMIC SCALING ---
+            function getBookScale() {
+                const w = window.innerWidth;
+                if (w <= 800) {
+                    return w / 450; // Exact scale to fit 450px page into screen
+                }
+                if (w <= 1024) return 0.8;
+                return 1;
+            }
+
             // --- MOBILE STATE MACHINE ---
             function updateMobileState() {
                 const targetFlippedPages = Math.floor((currentView + 1) / 2);
@@ -728,7 +727,7 @@
                 
                 // Manage camera pan
                 const tX = (cameraSide === 'right') ? '-25%' : '25%';
-                const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                const scale = getBookScale();
                 book.style.transform = `scale(${scale}) rotateX(0deg) rotateY(0deg) translateX(${tX})`;
                 
                 // Sync desktop state
@@ -757,7 +756,7 @@
                 const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
                 
                 const translateX = book.classList.contains('open') ? '0%' : '25%';
-                const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                const scale = getBookScale();
                 
                 book.style.transform = `scale(${scale}) rotateY(${xAxis}deg) rotateX(${yAxis + 5}deg) translateX(${translateX})`;
             });
@@ -766,7 +765,7 @@
                 if (window.innerWidth <= 800) return;
                 
                 const translateX = book.classList.contains('open') ? '0%' : '25%';
-                const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                const scale = getBookScale();
                 book.style.transform = `scale(${scale}) rotateX(5deg) rotateY(0deg) translateX(${translateX})`; 
             });
 
@@ -777,7 +776,7 @@
                 } else {
                     // Reset to desktop default
                     const translateX = book.classList.contains('open') ? '0%' : '25%';
-                    const scale = getComputedStyle(document.documentElement).getPropertyValue('--book-scale').trim() || 1;
+                    const scale = getBookScale();
                     book.style.transform = `scale(${scale}) rotateX(5deg) rotateY(0deg) translateX(${translateX})`;
                 }
             });
